@@ -12,6 +12,11 @@ The script expects potentially malicious files to exist in a folder named, "inpu
 
 - The reputation reports of files which could not be processed by the CDR step, will be recorded in a folder named, "reputation_report".
 
+## Process Flow
+
+![alt Process](Flowchart.png "Process")
+
+
 ## Setup
 
 requirements.txt provides a list of python libraries that are needed
