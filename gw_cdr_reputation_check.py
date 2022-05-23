@@ -12,7 +12,7 @@ load_dotenv()
 #TICLOUD_USERNAME =  
 #TICLOUD_PASSWORD = 
 
-GW_CDR_PLATFORM_URL = "https://api.glasswall.com" #this should normally be https://api.glasswall.com but is temporarily substituted
+GW_CDR_PLATFORM_URL = "https://api.glasswall.com"
 #Note the the 'GW_CDR_PLATFORM_URL' address is for demonstration purposes only
 
 TICLOUD_HOST_URL = "https://ticloud01.reversinglabs.com"
