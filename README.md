@@ -37,7 +37,7 @@ TICLOUD_PASSWORD= "<insert>"
 - A: A malicious file may enjoy a reputation that is not adverse for a period of time, which is usually because the security community has not yet determined the threat. There is a risk in relying solely on the reputation of a file. Ideally other countermeasures such as CDR or Sandboxing would be employed.
 
 - Q: Who provides the Reputation Service
-- A: ReversingLabs
+- A: ReversingLabs - https://www.reversinglabs.com
 
 - Q: Is the Reputation Service free for commercial use?
 - A: No. A Licence must be purchased
