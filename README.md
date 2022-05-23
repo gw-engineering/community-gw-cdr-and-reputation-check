@@ -15,6 +15,7 @@ The script expects potentially malicious files to exist in a folder named, "inpu
 ## Setup
 
 requirements.txt provides a list of python libraries that are needed
+
 .env file should exist and contain the following key value pairs:
 
 ```
