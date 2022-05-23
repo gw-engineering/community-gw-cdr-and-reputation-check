@@ -41,7 +41,7 @@ TICLOUD_PASSWORD= "<insert>"
 - A: ReversingLabs
 
 - Q: Is the Reputation Service free for commercial use?
-- A: No. A Licence must be pruchased
+- A: No. A Licence must be purchased
 
 - Q: Why does the CDR step sometimes fail?
 - A: Occassionally, if the file is badly broken and does not sufficiently conform to a file specification, safe file reconstruction may be prevented. Whilst a document parser *may* be able to open a non-conforming file and represent its contents, a bad actor may be relying on a vulnerability in the parser or local environment to mount an attack. 
