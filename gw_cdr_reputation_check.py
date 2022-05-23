@@ -108,7 +108,7 @@ def main():
 
 
 
-                with open(REPUTATION_REPORT_PATH+os.sep+'[tiReport] '+str_current_datetime+" "+filename, "a") as file:
+                with open(REPUTATION_REPORT_PATH+os.sep+'[tiReport] '+str_current_datetime+" "+filename+"-.txt", "a") as file:
                     write_ticloud_reputation_report_to_file(file, ticloud_reputation_report)
 
                 if reputation_outcome=="GOOD":
