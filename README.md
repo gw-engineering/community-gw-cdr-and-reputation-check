@@ -35,7 +35,7 @@ TICLOUD_PASSWORD= "<insert>"
 - A: The service discloses if a scanner has deemed the file to be malicious previously. The look-up uses a SHA256 hash to match adverse findings about the file in question. The file is not actively scanned for malware. The information that is returned relates only to its reputation, which is informed by previous assessments by third parties. 
 
 - Q: If I rely on a Reputation Service is there is risk?
-- A: A malicious file may enjoy a reputation that is not adverse for a period of time, which is usually because the security community has not yet determined the threat. There is a risk in relying solely on the reputation of a file. Ideally other countermeausures such as CDR or Sandboxing would be employed.
+- A: A malicious file may enjoy a reputation that is not adverse for a period of time, which is usually because the security community has not yet determined the threat. There is a risk in relying solely on the reputation of a file. Ideally other countermeasures such as CDR or Sandboxing would be employed.
 
 - Q: Who provides the Reputation Service
 - A: ReversingLabs
