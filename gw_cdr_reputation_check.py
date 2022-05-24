@@ -36,11 +36,11 @@ def cdr_platform_request(url, file,headers=GW_AUTH_HEADERS, timeout=TIME_OUT):
         )
         if (response.status_code == 200):
             print(response)
-            print("Connected to CDR Platform\n")
+            print("Connected to CDR Platform")
             response.raise_for_status()
         else:
             print(response)
-            print("CDR Platform not able to process request\n")
+            print("CDR Platform not able to process request")
             #Code here will only run if the request is successful
     except requests.ConnectionError as error:
         print(error)
@@ -90,12 +90,11 @@ def main():
  
             #path which files with a good reputation, but no CDR go to - caution these files may later be identified as malicious
             copy_filepath = root.replace(INPUT_FILE_PATH, COPIED_GOOD_REPUTATION_FILE_PATH, 1) +os.sep + filename
-
+            print("Checking file type with Glassall")
             with open(filepath, "rb") as file_binary:
                 filetype_detection_responce = cdr_platform_request(GW_CDR_PLATFORM_URL+"/api/filetypedetection/file", file_binary)
                 
             filetype_detection_responce_json = json.loads(filetype_detection_responce.content)
-            print("Checking file type with Glassall")
             print(filetype_detection_responce_json)
 
             if filetype_detection_responce_json.get("rebuildProcessingStatus") != "FILE_TYPE_UNSUPPORTED":
