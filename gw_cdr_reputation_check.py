@@ -13,6 +13,8 @@ load_dotenv()
 
 GW_CDR_PLATFORM_URL = "https://api.glasswall.com"
 #Note the the 'GW_CDR_PLATFORM_URL' address is for demonstration purposes only
+GW_AUTH_HEADERS=""
+TIME_OUT=5
 
 TICLOUD_HOST_URL = "https://ticloud01.reversinglabs.com"
 INPUT_FILE_PATH = r"input"
@@ -22,15 +24,32 @@ BAD_REPUTATION_FOLDER = r"bad_reputation_files"
 GOOD_REPUTATION_FOLDER = r"good_reputation_files"
 COPIED_GOOD_REPUTATION_FILE_PATH = r"good_reputation_no_cdr"
 
-def cdr_platform_request(url, file):
-    response = requests.post(
-        url=url,
-        files=[("file", file)],
-        headers=
-        {
-            "accept": "application/octet-stream"
-        }
-    )
+def cdr_platform_request(url, file,headers=GW_AUTH_HEADERS, timeout=TIME_OUT):
+    try:
+        response = requests.post(
+            url=url,
+            files=[("file", file)],
+            headers=
+            {
+                "accept": "application/octet-stream"
+            }
+        )
+        if (response.status_code == 200):
+            print(response)
+            print("Connected to CDR Platform\n")
+            response.raise_for_status()
+        else:
+            print(response)
+            print("CDR Platform not able to process request\n")
+            #Code here will only run if the request is successful
+    except requests.ConnectionError as error:
+        print(error)
+    except requests.exceptions.ConnectionError as errc:
+        print(errc)
+    except requests.exceptions.Timeout as errt:
+        print(errt)
+    except requests.exceptions.RequestException as err:
+        print(err)
     return response
 
 def write_ticloud_reputation_report_to_file(f, report):
@@ -74,13 +93,15 @@ def main():
 
             with open(filepath, "rb") as file_binary:
                 filetype_detection_responce = cdr_platform_request(GW_CDR_PLATFORM_URL+"/api/filetypedetection/file", file_binary)
-
+                
             filetype_detection_responce_json = json.loads(filetype_detection_responce.content)
+            print("Checking file type with Glassall")
+            print(filetype_detection_responce_json)
 
             if filetype_detection_responce_json.get("rebuildProcessingStatus") != "FILE_TYPE_UNSUPPORTED":
                 with open(filepath, "rb") as file_binary:
                     cdr_platform_response = cdr_platform_request(GW_CDR_PLATFORM_URL+"/api/rebuild/file", file_binary)
-            
+                    print("Requesting rebuild from Glassall CDR Platform")
                     if cdr_platform_response.status_code == 200 and cdr_platform_response.content:
                         # The CDR platform has rebuilt and returned the file
                         # Create the output directory if it does not already exist
@@ -117,6 +138,6 @@ def main():
                 else:
                     shutil.move(os.path.abspath(REPUTATION_REPORT_PATH+os.sep+file_sha256_hash), os.path.abspath(REPUTATION_REPORT_PATH+os.sep+"bad_reputation_files"+os.sep+file_sha256_hash+" "+"~"+filename+"~"+".json"))
 
-     
+    print("Ending\n") 
 if __name__ == "__main__":
     main()
