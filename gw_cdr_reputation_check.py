@@ -4,7 +4,6 @@ import json
 import hashlib
 import shutil
 from ReversingLabs.SDK.ticloud import FileReputation
-from datetime import datetime
 from dotenv import load_dotenv
 load_dotenv()
 
@@ -18,7 +17,9 @@ GW_CDR_PLATFORM_URL = "https://api.glasswall.com"
 TICLOUD_HOST_URL = "https://ticloud01.reversinglabs.com"
 INPUT_FILE_PATH = r"input"
 CLEAN_CDR_OUTPUT_FILE_PATH = r"clean_cdr"
-REPUTATION_REPORT_PATH = r"reputation_report"
+REPUTATION_REPORT_PATH = r"reputation_reports"
+BAD_REPUTATION_FOLDER = r"bad_reputation_files"
+GOOD_REPUTATION_FOLDER = r"good_reputation_files"
 COPIED_GOOD_REPUTATION_FILE_PATH = r"good_reputation_no_cdr"
 
 def cdr_platform_request(url, file):
@@ -34,19 +35,17 @@ def cdr_platform_request(url, file):
 
 def write_ticloud_reputation_report_to_file(f, report):
     global reputation_outcome
-    
     report_json = json.loads(report.text,)
-    f.write('Status: '+report_json['rl']['malware_presence']['status'])
+    #f.write('Status: '+report_json['rl']['malware_presence']['status'])
     if report_json['rl']['malware_presence']['status'] == 'MALICIOUS':
-        f.write('\r'+'Threat Name: '+report_json['rl']['malware_presence']['threat_name'])
+        #f.write('\r'+'Threat Name: '+report_json['rl']['malware_presence']['threat_name'])
         
         reputation_outcome="BAD"
         print(reputation_outcome+" - Reputation service reports that the file is Malicious\n")
     else:
-        f.write('\r'+'Threat Name: No detected threat')
+        #f.write('\r'+'Threat Name: No detected threat')
         reputation_outcome="GOOD"
         print(reputation_outcome+" - Reputation service reports no threats")
-
     f.write('\r'+'\r'+report.text)
 
 ticloud_file_reputation = FileReputation(
@@ -56,6 +55,11 @@ ticloud_file_reputation = FileReputation(
 )
 def main():
     print("\nStarting to process files \n")
+    # Create the reputation directories if they don't already exist
+    os.makedirs(os.path.dirname(REPUTATION_REPORT_PATH+os.sep), exist_ok=True)
+    os.makedirs(os.path.dirname(REPUTATION_REPORT_PATH+os.sep+BAD_REPUTATION_FOLDER+os.sep), exist_ok=True)
+    os.makedirs(os.path.dirname(REPUTATION_REPORT_PATH+os.sep+GOOD_REPUTATION_FOLDER+os.sep), exist_ok=True)
+
     # Iterate through the input file path locating all files
     for root, dirs, files in os.walk(INPUT_FILE_PATH, topdown=True, followlinks=False):
         for filename in files:
@@ -84,7 +88,7 @@ def main():
                         # Write the rebuilt file to the clean output file path
                         with open(new_cdr_filepath, "wb") as file_binary:
                             file_binary.write(cdr_platform_response.content)
-                        print("GOOD - CDR Successful - wrote clean file to:", os.path.abspath(CLEAN_CDR_OUTPUT_FILE_PATH+filename)+"\n")
+                        print("GOOD - CDR Successful - wrote clean file to:", os.path.abspath(new_cdr_filepath+os.sep+filename)+"\n")
 
                     else:
                         # An error occurred, print the rebuild processing status
@@ -98,24 +102,21 @@ def main():
 
                 file_sha256_hash = hashlib.sha256(file_bytes).hexdigest();
                 ticloud_reputation_report = ticloud_file_reputation.get_file_reputation(hash_input=file_sha256_hash, extended_results=True)
-                
-                # Create the reputation directory if it does not already exist
-                os.makedirs(os.path.dirname(REPUTATION_REPORT_PATH+os.sep), exist_ok=True)
 
-                current_datetime = datetime.now()
-                # convert datetime obj to string
-                str_current_datetime = str(current_datetime)
-
-
-
-                with open(REPUTATION_REPORT_PATH+os.sep+'[tiReport] '+str_current_datetime+" "+filename+"-.txt", "a") as file:
+                               
+                with open(REPUTATION_REPORT_PATH+os.sep+file_sha256_hash, "a") as file:
                     write_ticloud_reputation_report_to_file(file, ticloud_reputation_report)
 
                 if reputation_outcome=="GOOD":
-                                            
-                        print("Copying original "+filepath+" with good reputation to "+copy_filepath+"\n")
-                        os.makedirs(os.path.dirname(copy_filepath), exist_ok=True)
-                        shutil.copyfile(os.path.abspath(filepath),os.path.abspath(copy_filepath))          
+                        
+                    shutil.move(os.path.abspath(REPUTATION_REPORT_PATH+os.sep+file_sha256_hash), os.path.abspath(REPUTATION_REPORT_PATH+os.sep+"good_reputation_files"+os.sep+file_sha256_hash+" "+"~"+filename+"~"+".json"))
+                                      
+                    print("Copying original "+filepath+" with good reputation to "+copy_filepath+"\n")
+                    os.makedirs(os.path.dirname(copy_filepath), exist_ok=True)
+                    shutil.copyfile(os.path.abspath(filepath),os.path.abspath(copy_filepath))
+                else:
+                    shutil.move(os.path.abspath(REPUTATION_REPORT_PATH+os.sep+file_sha256_hash), os.path.abspath(REPUTATION_REPORT_PATH+os.sep+"bad_reputation_files"+os.sep+file_sha256_hash+" "+"~"+filename+"~"+".json"))
+
      
 if __name__ == "__main__":
     main()

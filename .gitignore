@@ -165,8 +165,9 @@ cython_debug/
 
 #folders
 /input
+/output
 /clean_cdr
-/reputation_report
+/reputation_reports
 /good_reputation_no_cdr
 
 
