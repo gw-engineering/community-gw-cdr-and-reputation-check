@@ -17,7 +17,8 @@ GW_CDR_PLATFORM_URL = "https://api.glasswall.com"
 TICLOUD_HOST_URL = "https://ticloud01.reversinglabs.com"
 INPUT_FILE_PATH = r"input"
 OUTPUT_FILE_PATH = r"output"
-CLEAN_CDR_OUTPUT_FILE_PATH = r"clean_cdr"
+CLEAN_CDR_OUTPUT_FILE_PATH = r"clean_cdr_files"
+CLEAN_CDR_ANALYSIS_FILE_PATH = r"cdr_analysis_files"
 REPUTATION_REPORT_PATH = r"reputation_reports"
 BAD_REPUTATION_FOLDER = r"bad_reputation_files"
 GOOD_REPUTATION_FOLDER = r"good_reputation_files"
@@ -86,6 +87,8 @@ def main():
             
             #path which pristine CDR files will go to
             new_cdr_filepath = root.replace(INPUT_FILE_PATH, (OUTPUT_FILE_PATH+os.sep+CLEAN_CDR_OUTPUT_FILE_PATH), 1) +os.sep + filename
+            #path which CDR analysis files will go to
+            new_cdr_analysis_filepath = root.replace(INPUT_FILE_PATH, (OUTPUT_FILE_PATH+os.sep+CLEAN_CDR_ANALYSIS_FILE_PATH), 1) +os.sep + filename
  
             #path which files with a good reputation, but no CDR go to - caution these files may later be identified as malicious
             copy_filepath = root.replace(INPUT_FILE_PATH, (OUTPUT_FILE_PATH+os.sep+COPIED_GOOD_REPUTATION_FILE_PATH), 1) +os.sep + filename
@@ -113,6 +116,22 @@ def main():
                         # An error occurred, print the rebuild processing status
                         cdr_platform_response_json = json.loads(cdr_platform_response.content)
                         print((cdr_platform_response_json.get("rebuildProcessingStatus")))
+                
+                print("HELLO!")
+
+                with open(filepath, "rb") as file_binary:
+                    cdr_platform_response = cdr_platform_request(GW_CDR_PLATFORM_URL+"/api/analysis/file", file_binary)
+                    print("Requesting analysis report from Glassall CDR Platform")
+                    if cdr_platform_response.status_code == 200 and cdr_platform_response.content:
+                        # The CDR platform has analysed the file
+                        # Create the output directory if it does not already exist
+                        os.makedirs(os.path.dirname(new_cdr_analysis_filepath), exist_ok=True)
+                        # Write the analysis file to the clean output file path
+                        with open(new_cdr_analysis_filepath, "wb") as file_binary:
+                            file_binary.write(cdr_platform_response.content)
+                        print("GOOD - CDR Analysis Successful - wrote clean file to:", os.path.abspath(new_cdr_analysis_filepath+os.sep+filename)+"\n")
+
+
             else:
                                
                 print("CDR not possible for "+filename+" - Checking the file's malware reputation")
