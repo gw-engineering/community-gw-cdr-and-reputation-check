@@ -10,11 +10,11 @@ The script expects potentially malicious files to exist in a folder named, "inpu
 
 - Only if reputation is not malicious, will a copy of the file be placed into a folder named, "good_reputation_no_cdr".
 
-- The reputation reports of files which could not be processed by the CDR step, will be recorded in a folder named, "reputation_report".
+- The reputation reports of files which could not be processed by the CDR step, will be recorded in a folder named, "reputation_reports". Within this folder, "good_reputation_files" and "bad_reputation_files" subsolders contain the applicable reports. No potentially malicious files are contained in the reporting folders.
 
 ## Process Flow
 
-![alt Process](images/Flowchart.png "Process")
+![alt Process](images/Flowchart.drawio.png "Process")
 
 ## Setup
 
