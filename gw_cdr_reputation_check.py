@@ -13,18 +13,17 @@ load_dotenv()
 
 GW_CDR_PLATFORM_URL = "https://api.glasswall.com"
 #Note the the 'GW_CDR_PLATFORM_URL' address is for demonstration purposes only
-GW_AUTH_HEADERS=""
-TIME_OUT=5
 
 TICLOUD_HOST_URL = "https://ticloud01.reversinglabs.com"
 INPUT_FILE_PATH = r"input"
+OUTPUT_FILE_PATH = r"output"
 CLEAN_CDR_OUTPUT_FILE_PATH = r"clean_cdr"
 REPUTATION_REPORT_PATH = r"reputation_reports"
 BAD_REPUTATION_FOLDER = r"bad_reputation_files"
 GOOD_REPUTATION_FOLDER = r"good_reputation_files"
 COPIED_GOOD_REPUTATION_FILE_PATH = r"good_reputation_no_cdr"
 
-def cdr_platform_request(url, file,headers=GW_AUTH_HEADERS, timeout=TIME_OUT):
+def cdr_platform_request(url, file):
     try:
         response = requests.post(
             url=url,
@@ -75,9 +74,9 @@ ticloud_file_reputation = FileReputation(
 def main():
     print("\nStarting to process files \n")
     # Create the reputation directories if they don't already exist
-    os.makedirs(os.path.dirname(REPUTATION_REPORT_PATH+os.sep), exist_ok=True)
-    os.makedirs(os.path.dirname(REPUTATION_REPORT_PATH+os.sep+BAD_REPUTATION_FOLDER+os.sep), exist_ok=True)
-    os.makedirs(os.path.dirname(REPUTATION_REPORT_PATH+os.sep+GOOD_REPUTATION_FOLDER+os.sep), exist_ok=True)
+    os.makedirs(os.path.dirname(OUTPUT_FILE_PATH+os.sep+REPUTATION_REPORT_PATH+os.sep), exist_ok=True)
+    os.makedirs(os.path.dirname(OUTPUT_FILE_PATH+os.sep+REPUTATION_REPORT_PATH+os.sep+BAD_REPUTATION_FOLDER+os.sep), exist_ok=True)
+    os.makedirs(os.path.dirname(OUTPUT_FILE_PATH+os.sep+REPUTATION_REPORT_PATH+os.sep+GOOD_REPUTATION_FOLDER+os.sep), exist_ok=True)
 
     # Iterate through the input file path locating all files
     for root, dirs, files in os.walk(INPUT_FILE_PATH, topdown=True, followlinks=False):
@@ -86,10 +85,10 @@ def main():
             filepath = root + os.sep + filename
             
             #path which pristine CDR files will go to
-            new_cdr_filepath = root.replace(INPUT_FILE_PATH, CLEAN_CDR_OUTPUT_FILE_PATH, 1) +os.sep + filename
+            new_cdr_filepath = root.replace(INPUT_FILE_PATH, (OUTPUT_FILE_PATH+os.sep+CLEAN_CDR_OUTPUT_FILE_PATH), 1) +os.sep + filename
  
             #path which files with a good reputation, but no CDR go to - caution these files may later be identified as malicious
-            copy_filepath = root.replace(INPUT_FILE_PATH, COPIED_GOOD_REPUTATION_FILE_PATH, 1) +os.sep + filename
+            copy_filepath = root.replace(INPUT_FILE_PATH, (OUTPUT_FILE_PATH+os.sep+COPIED_GOOD_REPUTATION_FILE_PATH), 1) +os.sep + filename
             print("Checking file type with Glassall")
             with open(filepath, "rb") as file_binary:
                 filetype_detection_responce = cdr_platform_request(GW_CDR_PLATFORM_URL+"/api/filetypedetection/file", file_binary)
@@ -124,18 +123,18 @@ def main():
                 ticloud_reputation_report = ticloud_file_reputation.get_file_reputation(hash_input=file_sha256_hash, extended_results=True)
 
                                
-                with open(REPUTATION_REPORT_PATH+os.sep+file_sha256_hash, "a") as file:
+                with open(OUTPUT_FILE_PATH+os.sep+REPUTATION_REPORT_PATH+os.sep+file_sha256_hash, "a") as file:
                     write_ticloud_reputation_report_to_file(file, ticloud_reputation_report)
 
                 if reputation_outcome=="GOOD":
                         
-                    shutil.move(os.path.abspath(REPUTATION_REPORT_PATH+os.sep+file_sha256_hash), os.path.abspath(REPUTATION_REPORT_PATH+os.sep+"good_reputation_files"+os.sep+file_sha256_hash+" "+"~"+filename+"~"+".json"))
+                    shutil.move(os.path.abspath(OUTPUT_FILE_PATH+os.sep+REPUTATION_REPORT_PATH+os.sep+file_sha256_hash), os.path.abspath(OUTPUT_FILE_PATH+os.sep+REPUTATION_REPORT_PATH+os.sep+"good_reputation_files"+os.sep+file_sha256_hash+" "+"~"+filename+"~"+".json"))
                                       
                     print("Copying original "+filepath+" with good reputation to "+copy_filepath+"\n")
                     os.makedirs(os.path.dirname(copy_filepath), exist_ok=True)
                     shutil.copyfile(os.path.abspath(filepath),os.path.abspath(copy_filepath))
                 else:
-                    shutil.move(os.path.abspath(REPUTATION_REPORT_PATH+os.sep+file_sha256_hash), os.path.abspath(REPUTATION_REPORT_PATH+os.sep+"bad_reputation_files"+os.sep+file_sha256_hash+" "+"~"+filename+"~"+".json"))
+                    shutil.move(os.path.abspath(OUTPUT_FILE_PATH+os.sep+REPUTATION_REPORT_PATH+os.sep+file_sha256_hash), os.path.abspath(OUTPUT_FILE_PATH+os.sep+REPUTATION_REPORT_PATH+os.sep+"bad_reputation_files"+os.sep+file_sha256_hash+" "+"~"+filename+"~"+".json"))
 
     print("Ending\n") 
 if __name__ == "__main__":

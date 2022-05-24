@@ -4,13 +4,13 @@
 
 The script expects potentially malicious files to exist in a folder named, "input".
 
-- Files are presented to the Glasswall CDR Platform REST API for processing. The output of the CDR step is sent to a folder named, "clean_cdr".
+- Files are presented to the Glasswall CDR Platform REST API for processing. The output of the CDR step is sent to a folder named, "output/clean_cdr".
 
 - In the event that files cannot be processed or is unsupported, the file is checked by the reputation service to determine if the file hash is known in any malware databases.
 
-- Only if reputation is not malicious, will a copy of the file be placed into a folder named, "good_reputation_no_cdr".
+- Only if reputation is not malicious, will a copy of the file be placed into a folder named, "output/good_reputation_no_cdr".
 
-- The reputation reports of files which could not be processed by the CDR step, will be recorded in a folder named, "reputation_reports". Within this folder, "good_reputation_files" and "bad_reputation_files" subsolders contain the applicable reports. No potentially malicious files are contained in the reporting folders.
+- The reputation reports of files which could not be processed by the CDR step, will be recorded in a folder named, "output/reputation_reports". Within this folder, "good_reputation_files" and "bad_reputation_files" subsolders contain the applicable reports. No potentially malicious files are contained in the reporting folders.
 
 ## Process Flow
 
