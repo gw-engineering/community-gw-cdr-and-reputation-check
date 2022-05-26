@@ -1,3 +1,4 @@
 python-dotenv
 requests
 reversinglabs-sdk-py3
+fpdf
