@@ -97,6 +97,7 @@ def main():
                 print(filename)
             filetype_detection_responce_json = json.loads(filetype_detection_responce.content)
             print(filetype_detection_responce_json)
+            print("+----------+")
 
             if filetype_detection_responce_json.get("rebuildProcessingStatus") != "FILE_TYPE_UNSUPPORTED":
                 if CREATE_CDR_ANALYSIS_REPORTS == True:
