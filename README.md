@@ -14,7 +14,7 @@ The script expects potentially malicious files to exist in a folder named, "inpu
 
 - The script will detect the true file type using the Glasswall CDR engine. Sometimes an attacker will use a different file extension to evade a filter. Glasswall will determine the true file type, looking at the structure of the data inside the file. Files with unstructured data, such as '.txt' files are not supported by Glasswall as they can be used by an attacker insert malicious software.
 
-- Converting the contents of a text file to a file format such as PDF is a usability option, as that file has an associated specification which facilitates the CDR process. However, if the original '.txt' file contained a malicious script, that would still be visible in the PDF visual layer, (although not active). So the conversion would not eliminate all possible risk, but would mitigte the liklihood that a malicious script with a '.txt' extension could have it's file extension changed to a executable type.
+- Converting the contents of a text file to a file format such as PDF is a usability option, as that file has an associated specification which facilitates the CDR process. However, if the original '.txt' file contained malicious code, that would still be visible in the PDF visual layer, (although not active). So the conversion would not eliminate all possible risk, but would mitigte the liklihood that a malicious script with a '.txt' extension could have it's file extension changed to a executable type.
 
 - The script enables the (1) creation of files which have been CDR'd and (2) to produce accompanying analysis reports. Either step can be switched-off by setting 'CREATE_CDR_ANALYSIS_REPORTS' and  'CREATE_CDR_FILES' values to 'False'.
 
