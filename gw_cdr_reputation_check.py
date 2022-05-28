@@ -1,3 +1,4 @@
+from fileinput import filename
 import requests
 import json
 import hashlib
@@ -8,6 +9,7 @@ from fpdf import FPDF
 import os
 import time
 import pathlib
+import pandas as pd
 load_dotenv()
 
 #.env file should contain the following pairs
@@ -27,13 +29,16 @@ BAD_REPUTATION_FOLDER = r"bad_reputation_files_no_cdr"
 GOOD_REPUTATION_FOLDER = r"good_reputation_files_no_cdr"
 COPIED_GOOD_REPUTATION_FILE_PATH = r"good_reputation_no_cdr"
 TXT2PDF_OUTPUT_FILE_PATH= r"temp_txt2pdf_files_no_cdr" #temp_txt_pdf_files | 
+CSV2EXCEL_OUTPUT_FILE_PATH= r"temp_csv2excel_files_no_cdr" #temp_csv_pdf_files | 
 WAIT_429_ERROR = 0 #wait period (s)if 429 error received #Ensure rate limiting is observed
 API_WAIT_PERIOD = 1 #Set API wait period(s) to avoid hitting rate throttling 
 CREATE_CDR_ANALYSIS_REPORTS = True
 CREATE_CDR_FILES = True
 CREATE_REPUTATION_REPORTS = True
 CONVERT_TXT2PDF_AND_CDR = True
+CONVERT_CSV2EXCEL_AND_CDR = True
 REMOVE_TEMP_PDF_FOLDER = True
+REMOVE_TEMP_EXCEL_FOLDER = True
 CDR_REPORT_FORMAT = 'JSON' #JSON or XML
 
 #Send files to local or remote Glasswall CDR Platform
@@ -74,17 +79,6 @@ def cdr_platform_request(url, file):
         print(err)
     return response
     
-
-#Create PDF from unsupported TXT file
-def create_pdf(filepath, pdf_output_file_name, txt2pdf_copy_filepath): 
-    pdf = FPDF() 
-    pdf.add_page() 
-    pdf.set_font("Arial", size = 12) 
-    f = open(filepath, "r") 
-    for x in f: 
-        pdf.cell(200, 10, txt = x, ln = 1, align = 'L') 
-    pdf.output(txt2pdf_copy_filepath+os.sep+pdf_output_file_name)
-
 #Write the reputation of files which can't be CDR'd
 def write_ticloud_reputation_report_to_file(f, report):
     global reputation_outcome
@@ -115,6 +109,23 @@ def remove_temp_txt_to_pdf_folder():
         removepath=TXT2PDF_OUTPUT_FILE_PATH
         if os.path.exists(removepath) and os.path.isdir(removepath):
             shutil.rmtree(removepath) 
+
+#Will remove the temporary pdf folder which has not been CDR'd
+def remove_temp_csv_to_excel_folder():
+    if REMOVE_TEMP_EXCEL_FOLDER == True:
+        removepath=CSV2EXCEL_OUTPUT_FILE_PATH
+        if os.path.exists(removepath) and os.path.isdir(removepath):
+            shutil.rmtree(removepath) 
+
+#Create PDF from unsupported TXT file
+def create_pdf(filepath, pdf_output_file_name, txt2pdf_copy_filepath): 
+    pdf = FPDF() 
+    pdf.add_page() 
+    pdf.set_font("Arial", size = 12) 
+    f = open(filepath, "r") 
+    for x in f: 
+        pdf.cell(200, 10, txt = x, ln = 1, align = 'L') 
+    pdf.output(txt2pdf_copy_filepath+os.sep+pdf_output_file_name)
 
 #Write txt files which can't be CDR'd to a PDF in temporary location
 def txt_to_pdf():
@@ -147,6 +158,44 @@ def txt_to_pdf_with_cdr():
                 cdr_rebuild_files(filename, root, filepath, dynamic_source_file, dynamic_target_file)
     #Clean-up temp folder            
     remove_temp_txt_to_pdf_folder()
+
+#Create PDF from unsupported TXT file
+def create_excel(filepath, csv2excel_copy_filepath, csv_excel_output_file_name): 
+    print(filepath)
+    print(csv2excel_copy_filepath+os.sep+csv_excel_output_file_name)
+    read_file = pd.read_csv (filepath)
+    read_file.to_excel (csv2excel_copy_filepath+os.sep+csv_excel_output_file_name, index = None, header=True)
+
+def csv_to_excel():
+    if CONVERT_CSV2EXCEL_AND_CDR ==True:
+        print("csv2excel")
+        for root, dirs, files in os.walk(INPUT_FILE_PATH, topdown=True, followlinks=False):
+            for filename in files:
+                filepath = root + os.sep + filename
+                #Path which files with a good reputation and the .CSV file has been converted to EXCEL
+                csv2excel_copy_filepath = root.replace(INPUT_FILE_PATH, CSV2EXCEL_OUTPUT_FILE_PATH, 1)
+                # Create the CSV output directory if it does not already exist
+                os.makedirs(os.path.dirname(csv2excel_copy_filepath+os.sep), exist_ok=True)
+                file_extension = pathlib.Path(filename).suffix
+                if file_extension == '.csv':
+                    print("Creating Excel files instead of CSV files\n")
+                    print(filename)
+                    filepath = root + os.sep + filename
+                    csv_excel_output_file_name = filename + "~.xlsx"
+                    create_excel(filepath, csv2excel_copy_filepath, csv_excel_output_file_name)
+                    print("+----------+")
+
+#Write PDF files which were converted from TXT and CDR them. Place in desired clean destination tree
+def csv_to_excel_with_cdr():
+    for root, dirs, files in os.walk(CSV2EXCEL_OUTPUT_FILE_PATH, topdown=True, followlinks=False):
+        for filename in files:
+            filepath = root + os.sep + filename
+            print(filename)
+            if CONVERT_CSV2EXCEL_AND_CDR == True:
+                dynamic_source_file = CSV2EXCEL_OUTPUT_FILE_PATH
+                dynamic_target_file = CLEAN_CDR_OUTPUT_FILE_PATH
+                cdr_rebuild_files(filename, root, filepath, dynamic_source_file, dynamic_target_file)
+    remove_temp_csv_to_excel_folder()
 
 #Perform CDR File Check and Analysis If Possible
 def cdr_file_check_analyse():
@@ -276,10 +325,19 @@ def main():
     # Iterate through the input file path locating all files
     
     if CONVERT_TXT2PDF_AND_CDR == True:
+        print("Converting TXT files to PDF")
         txt_to_pdf()
         txt_to_pdf_with_cdr()
     else:
         print("No TXT to PDF step\n")
+    if CONVERT_CSV2EXCEL_AND_CDR == True:
+        print("Converting CSV files to EXCEL")
+        csv_to_excel()
+        csv_to_excel_with_cdr()
+    else:
+        print("No CSV to EXCEL step\n")
+
+    
     cdr_file_check_analyse()
 
 if __name__ == "__main__":
