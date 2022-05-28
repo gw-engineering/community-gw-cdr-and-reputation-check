@@ -4,7 +4,7 @@
 
 The script expects potentially malicious files to exist in a folder named, "input".
 
-- Files are presented to the Glasswall CDR Platform REST API for processing. The output of the CDR step is sent to a folder named, "output/clean_cdr".
+- Files are presented to the Glasswall CDR Platform REST API for processing. The output of the CDR step is sent to a folder named, "output/clean_cdr_files".
 
 - If that files cannot be processed or is unsupported, the file is checked by the reputation service to determine if the file hash is known in any malware databases.
 
@@ -14,9 +14,11 @@ The script expects potentially malicious files to exist in a folder named, "inpu
 
 - The script will detect the true file type using the Glasswall CDR engine. Sometimes an attacker will use a different file extension to evade a filter. Glasswall will determine the true file type, looking at the structure of the data inside the file. Files with unstructured data, such as '.txt' files are not supported by Glasswall as they can be used by an attacker insert malicious software.
 
-- Converting the contents of a text file to a file format such as PDF is a usability option, as that file has an associated specification which facilitates the CDR process. However, if the original '.txt' file contained malicious code, that would still be visible in the PDF visual layer, (although not active). So the conversion would not eliminate all possible risk, but would mitigte the liklihood that a malicious file with a '.txt' extension could have it's file extension changed to a executable type.
+- Converting the contents of a text file to a file format such as PDF is a usability option, as that file has an associated specification which facilitates the CDR process. However, if the original '.txt' file contained malicious code, that would still be visible in the PDF visual layer, (although not active). So the conversion would not eliminate all possible risk, but would mitigate the liklihood that a malicious file with a '.txt' extension could have it's file extension changed to a executable type. This script supports this approach and will convert the '.txt' file to a '.pdf' format, and will then CDR that converted '.pdf' file. The sanitised file is placed in the clean_cdr_files tree structure, if 'CONVERT_TXT2PDF_AND_CDR = True'. If this value is set to 'False', no Text file converstion will take place.
 
 - The script enables the (1) creation of files which have been CDR'd and (2) to produce accompanying analysis reports. Either step can be switched-off by setting 'CREATE_CDR_ANALYSIS_REPORTS' and  'CREATE_CDR_FILES' values to 'False'.
+
+- Rate limiting is in place at the demonstration API url. The 'API_WAIT_PERIOD' value can be set to avoid hitting a rate limiting penalty
 
 ## Process Flow
 
