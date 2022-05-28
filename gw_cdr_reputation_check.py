@@ -35,7 +35,7 @@ CREATE_CDR_ANALYSIS_REPORTS = True
 CREATE_CDR_FILES = True
 CREATE_REPUTATION_REPORTS = True
 CONVERT_TXT2PDF_AND_CDR = True
-REMOVE_TEMP_PDF_FOLDER = False
+REMOVE_TEMP_PDF_FOLDER = True
 CDR_REPORT_FORMAT = 'JSON' #JSON or XML
 
 #Send files to local or remote Glasswall CDR Platform
@@ -148,7 +148,6 @@ def txt_to_pdf_with_cdr():
 def cdr_assessment():
     cdr_file_check_analyse()
 
-
 #Perform CDR File Check and Analysis If Possible
 def cdr_file_check_analyse():
     for root, dirs, files in os.walk(INPUT_FILE_PATH, topdown=True, followlinks=False):
@@ -215,7 +214,6 @@ def cdr_file_check_analyse():
            
             get_reputation_of_files (filecheck, filename, filepath, copy_filepath)
 
-
 #Generic call to CDR Files
 def cdr_rebuild_files(filename, root, filepath, dynamic_source_file, dynamic_target_file):
     #Path which pristine CDR files will go to
@@ -274,7 +272,6 @@ def get_reputation_of_files (filecheck, filename, filepath, copy_filepath):
             print("+--------------------+")
 
 def main():
-
     
     print("\nStarting to process files \n")
     # Iterate through the input file path locating all files
@@ -285,119 +282,6 @@ def main():
     else:
         print("No TXT to PDF step\n")
     cdr_assessment()
-
-
-
-
-
-
-    # for root, dirs, files in os.walk(INPUT_FILE_PATH, topdown=True, followlinks=False):
-    #     for filename in files:
-    #         filepath = root + os.sep + filename
-    #         #Path which files with a good reputation, but no CDR go to - caution these files may later be identified as malicious
-    #         copy_filepath = root.replace(INPUT_FILE_PATH, (OUTPUT_FILE_PATH+os.sep+COPIED_GOOD_REPUTATION_FILE_PATH), 1) +os.sep + filename
-            
-    #         with open(filepath, "rb") as file_binary:
-    #             print("Checking file type with Glassall")        
-    #             filetype_detection_responce = cdr_platform_request(GW_CDR_PLATFORM_URL+"/api/filetypedetection/file", file_binary)
-    #             file_bytes = file_binary.read()
-    #             file_sha256_hash = hashlib.sha256(file_bytes).hexdigest();
-    #             #print(file_sha256_hash)
-    #             print(filename)
-    #         filetype_detection_responce_json = json.loads(filetype_detection_responce.content)
-    #         file_supported_outcome=(filetype_detection_responce_json.get("rebuildProcessingStatus"))
-                        
-    #         if file_supported_outcome=="FILE_WAS_UN_PROCESSABLE" or file_supported_outcome=="FILE_TYPE_UNSUPPORTED":
-    #             filecheck=False
-    #             print("Value:", file_supported_outcome)
-    #             print("Proceed with CDR Rebuild?:", filecheck)
-    #             print("+----------+")
-    #         else:
-    #             filecheck=True
-    #             print(filecheck)
-    #             print("Value:", file_supported_outcome)
-    #             print("Proceed with CDR Rebuild?:", filecheck)
-
-    #             #Perform CDR Analysis If Possible
-    #             if CREATE_CDR_ANALYSIS_REPORTS == True and filecheck==True: #Won't perform CDR Analysis if check failed. Note sometimes this is possible.
-    #                 with open(filepath, "rb") as file_binary:
-    #                     print("Creating CDR Analysis Report")
-                        
-    #                     if CDR_REPORT_FORMAT == 'JSON':
-    #                         cdr_report_ext='.json'
-    #                     else:
-    #                         cdr_report_ext='.xml'
-    #                     new_cdr_analysis_filepath = root.replace(INPUT_FILE_PATH, (OUTPUT_FILE_PATH+os.sep+CLEAN_CDR_ANALYSIS_FILE_PATH), 1) +os.sep + filename +"~"+(file_sha256_hash)+cdr_report_ext
-    #                     cdr_platform_analyse_response = cdr_platform_request(GW_CDR_PLATFORM_URL+"/api/analyse/file", file_binary)
-    #                     print("Requesting analysis report from Glassall CDR Platform")
-
-    #                     if cdr_platform_analyse_response.status_code == 200 and cdr_platform_analyse_response.content:
-    #                         # The CDR platform has analysed the file
-    #                         # Create the output directory if it does not already exist
-    #                         os.makedirs(os.path.dirname(new_cdr_analysis_filepath), exist_ok=True)
-    #                         # Write the analysis file to the clean output file path
-    #                         with open(new_cdr_analysis_filepath, "wb") as file_binary:
-    #                             file_binary.write(cdr_platform_analyse_response.content)
-    #                         print("GOOD - CDR Analysis Successful - wrote clean file to:", os.path.abspath(new_cdr_analysis_filepath))
-
-                    # if CREATE_CDR_FILES == True and filecheck==True:
-                    #     #path which pristine CDR files will go to
-                    #     new_cdr_filepath = root.replace(INPUT_FILE_PATH, (OUTPUT_FILE_PATH+os.sep+CLEAN_CDR_OUTPUT_FILE_PATH), 1) +os.sep + filename
-                    #     with open(filepath, "rb") as file_binary:
-                    #         print("Creating Rebuilt File")
-                    #         cdr_platform_rebuild_response = cdr_platform_request(GW_CDR_PLATFORM_URL+"/api/rebuild/file", file_binary)
-                    #         file_bytes = file_binary.read()
-                    #         file_sha256_hash = hashlib.sha256(file_bytes).hexdigest();
-                    #         #print(file_sha256_hash)
-                    #         print("Requesting rebuild from Glassall CDR Platform")
-
-                    #         if cdr_platform_rebuild_response.status_code == 200 and cdr_platform_rebuild_response.content:
-                    #             # The CDR platform has rebuilt and returned the file
-                    #             # Create the output directory if it does not already exist
-                    #             os.makedirs(os.path.dirname(new_cdr_filepath), exist_ok=True)
-                    #             # Write the rebuilt file to the clean output file path
-                    #             with open(new_cdr_filepath, "wb") as file_binary:
-                    #                 file_binary.write(cdr_platform_rebuild_response.content)
-                    #             print("GOOD - CDR Successful - wrote clean file to:", os.path.abspath(new_cdr_filepath))
-                    #             print("+--------------------+")
-
-                    #         else:
-                    #             # An error occurred, print the rebuild processing status
-                    #             cdr_platform_response_json = json.loads(cdr_platform_rebuild_response.content)
-                    #             print((cdr_platform_response_json.get("rebuildProcessingStatus")))
-     
-            # if CREATE_REPUTATION_REPORTS == True and filecheck==False:
-            #     print("CDR not possible for "+filename+" - Checking the file's malware reputation")
-            #     with open(filepath,"rb") as file_binary:
-            #         file_bytes = file_binary.read()
-
-            #     file_sha256_hash = hashlib.sha256(file_bytes).hexdigest();
-            #     ticloud_reputation_report = ticloud_file_reputation.get_file_reputation(hash_input=file_sha256_hash, extended_results=True)
-                
-            #     # Create the reputation directory if it does not already exist
-            #     os.makedirs(os.path.dirname(OUTPUT_FILE_PATH+os.sep+REPUTATION_REPORT_PATH+os.sep), exist_ok=True)
-
-            #     with open(OUTPUT_FILE_PATH+os.sep+REPUTATION_REPORT_PATH+os.sep+file_sha256_hash, "a") as file:
-            #         write_ticloud_reputation_report_to_file(file, ticloud_reputation_report)
-
-            #     if reputation_outcome=="GOOD":
-            #         # Create the good reputation directories if it does not already exist
-            #         os.makedirs(os.path.dirname(OUTPUT_FILE_PATH+os.sep+REPUTATION_REPORT_PATH+os.sep+GOOD_REPUTATION_FOLDER+os.sep), exist_ok=True)
-            #         shutil.move(os.path.abspath(OUTPUT_FILE_PATH+os.sep+REPUTATION_REPORT_PATH+os.sep+file_sha256_hash), os.path.abspath(OUTPUT_FILE_PATH+os.sep+REPUTATION_REPORT_PATH+os.sep+GOOD_REPUTATION_FOLDER+os.sep+file_sha256_hash+" "+"~"+filename+"~"+".json"))
-            #         print("Copying original "+filepath+" with good reputation to "+copy_filepath)
-            #         os.makedirs(os.path.dirname(copy_filepath), exist_ok=True)
-            #         shutil.copyfile(os.path.abspath(filepath),os.path.abspath(copy_filepath))
-                    
-            #         print("+--------------------+")
-
-            #     else:
-            #         # Create the bad reputation directories if it does not already exist
-            #         os.makedirs(os.path.dirname(OUTPUT_FILE_PATH+os.sep+REPUTATION_REPORT_PATH+os.sep+BAD_REPUTATION_FOLDER+os.sep), exist_ok=True)
-            #         shutil.move(os.path.abspath(OUTPUT_FILE_PATH+os.sep+REPUTATION_REPORT_PATH+os.sep+file_sha256_hash), os.path.abspath(OUTPUT_FILE_PATH+os.sep+REPUTATION_REPORT_PATH+os.sep+BAD_REPUTATION_FOLDER+os.sep+file_sha256_hash+" "+"~"+filename+"~"+".json"))
-            #         print("Keeping original "+filepath+" with bad reputation - no copy")
-            #         print("+--------------------+")
-
-    
 
 if __name__ == "__main__":
     main()
