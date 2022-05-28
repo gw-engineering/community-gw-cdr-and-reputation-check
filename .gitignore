@@ -169,6 +169,7 @@ cython_debug/
 /clean_cdr
 /reputation_reports
 /good_reputation_no_cdr
+/temp_txt2pdf_files_no_cdr
 
 
 #Snyk
