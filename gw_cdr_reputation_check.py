@@ -1,8 +1,3 @@
-from distutils.file_util import copy_file
-from genericpath import exists
-from http.client import OK
-import os
-from pydoc import text
 import requests
 import json
 import hashlib
@@ -11,6 +6,7 @@ from ReversingLabs.SDK.ticloud import FileReputation
 from dotenv import load_dotenv
 from fpdf import FPDF 
 import os
+import time
 import pathlib
 load_dotenv()
 
@@ -31,6 +27,8 @@ BAD_REPUTATION_FOLDER = r"bad_reputation_files_no_cdr"
 GOOD_REPUTATION_FOLDER = r"good_reputation_files_no_cdr"
 COPIED_GOOD_REPUTATION_FILE_PATH = r"good_reputation_no_cdr"
 TXT2PDF_OUTPUT_FILE_PATH= r"temp_txt2pdf_files_no_cdr" #temp_txt_pdf_files | 
+WAIT_429_ERROR = 0 #wait period (s)if 429 error received #Ensure rate limiting is observed
+API_WAIT_PERIOD = 1 #Set API wait period(s) to avoid hitting rate throttling 
 CREATE_CDR_ANALYSIS_REPORTS = True
 CREATE_CDR_FILES = True
 CREATE_REPUTATION_REPORTS = True
@@ -40,6 +38,7 @@ CDR_REPORT_FORMAT = 'JSON' #JSON or XML
 
 #Send files to local or remote Glasswall CDR Platform
 def cdr_platform_request(url, file):
+    
     try:
         response = requests.post(
             url=url,
@@ -49,13 +48,19 @@ def cdr_platform_request(url, file):
             },
             headers= 
             {
-                "accept": "application/octet-stream"
+                'accept': 'application/octet-stream',
+                'User-agent': 'Glasswall_API_open_source_client'
             }
         )
         if (response.status_code == 200):
             print(response)
             print("Connected to CDR Platform")
             response.raise_for_status()
+            time.sleep(API_WAIT_PERIOD)
+            print("API throttle - waiting", API_WAIT_PERIOD, "second(s)")
+        elif (response.status_code == 429):
+            print("Need to throttle back - hitting 429 errors from CDR Platform")
+            time.sleep(WAIT_429_ERROR)
         else:
             print(response)
             print("CDR Platform not able to process request")
@@ -68,6 +73,7 @@ def cdr_platform_request(url, file):
     except requests.exceptions.RequestException as err:
         print(err)
     return response
+    
 
 #Create PDF from unsupported TXT file
 def create_pdf(filepath, pdf_output_file_name, txt2pdf_copy_filepath): 
@@ -118,7 +124,6 @@ def txt_to_pdf():
                     filepath = root + os.sep + filename
                     #Path which files with a good reputation and the .TXT file has been converted to PDF
                     txt2pdf_copy_filepath = root.replace(INPUT_FILE_PATH, TXT2PDF_OUTPUT_FILE_PATH, 1)
-                    print(txt2pdf_copy_filepath)
                     # Create the pdf output directory if it does not already exist
                     os.makedirs(os.path.dirname(txt2pdf_copy_filepath+os.sep), exist_ok=True)
                     file_extension = pathlib.Path(filename).suffix
@@ -130,7 +135,6 @@ def txt_to_pdf():
                         create_pdf(filepath, pdf_output_file_name, txt2pdf_copy_filepath)
                         print("+----------+")
             
-
 #Write PDF files which were converted from TXT and CDR them. Place in desired clean destination tree
 def txt_to_pdf_with_cdr():
     for root, dirs, files in os.walk(TXT2PDF_OUTPUT_FILE_PATH, topdown=True, followlinks=False):
@@ -143,10 +147,6 @@ def txt_to_pdf_with_cdr():
                 cdr_rebuild_files(filename, root, filepath, dynamic_source_file, dynamic_target_file)
     #Clean-up temp folder            
     remove_temp_txt_to_pdf_folder()
-
-#Write Analyse files in the Input Tree and place the analysis reports into the target location
-def cdr_assessment():
-    cdr_file_check_analyse()
 
 #Perform CDR File Check and Analysis If Possible
 def cdr_file_check_analyse():
@@ -173,7 +173,6 @@ def cdr_file_check_analyse():
                 print("+----------+")
             else:
                 filecheck=True
-                print(filecheck)
                 print("Value:", file_supported_outcome)
                 print("Could proceed with CDR Analysis?:", filecheck)
                 if CREATE_CDR_ANALYSIS_REPORTS == True:
@@ -281,7 +280,7 @@ def main():
         txt_to_pdf_with_cdr()
     else:
         print("No TXT to PDF step\n")
-    cdr_assessment()
+    cdr_file_check_analyse()
 
 if __name__ == "__main__":
     main()
