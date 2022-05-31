@@ -110,7 +110,7 @@ def remove_temp_txt_to_pdf_folder():
         if os.path.exists(removepath) and os.path.isdir(removepath):
             shutil.rmtree(removepath) 
 
-#Will remove the temporary pdf folder which has not been CDR'd
+#Will remove the temporary excel folder which has not been CDR'd
 def remove_temp_csv_to_excel_folder():
     if REMOVE_TEMP_EXCEL_FOLDER == True:
         removepath=CSV2EXCEL_OUTPUT_FILE_PATH
