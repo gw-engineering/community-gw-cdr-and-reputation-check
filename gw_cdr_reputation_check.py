@@ -1,5 +1,5 @@
 '''Community script to support reputation lookup of files, and to convert TEXT and CSV files to
-a support file format.
+a supported file format.
 '''
 import json
 import hashlib
