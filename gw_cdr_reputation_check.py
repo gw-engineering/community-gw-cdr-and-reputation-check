@@ -73,8 +73,6 @@ def cdr_platform_request(url, file):
             print("CDR Platform not able to process request")
     except requests.ConnectionError as error:
         print(error)
-    except requests.exceptions.ConnectionError as errc:
-        print(errc)
     except requests.exceptions.Timeout as errt:
         print(errt)
     except requests.exceptions.RequestException as err:
@@ -125,10 +123,11 @@ def create_pdf(filepath, pdf_output_file_name, txt2pdf_copy_filepath):
     pdf = FPDF()
     pdf.add_page()
     pdf.set_font("Arial", size = 12)
-    f = open(filepath, "r", encoding="utf8")
-    for x in f:
-        pdf.cell(200, 10, txt = x, ln = 1, align = 'L')
+    with open(filepath, "r", encoding="utf8") as f:
+        for x in f:
+            pdf.cell(200, 10, txt = x, ln = 1, align = 'L')
     pdf.output(txt2pdf_copy_filepath+os.sep+pdf_output_file_name)
+
 
 def txt_to_pdf():
     '''Write txt files which can't be CDR'd to a PDF in temporary location'''
