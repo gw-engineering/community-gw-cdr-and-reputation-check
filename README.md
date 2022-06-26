@@ -41,7 +41,7 @@ requirements.txt provides a list of python libraries that are needed
 ```text
 #env variables
 TICLOUD_USERNAME = "<insert>"
-TICLOUD_PASSWORD= "<insert>"
+TICLOUD_PASSWORD = "<insert>"
 ```
 
 ## FAQs
