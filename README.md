@@ -65,16 +65,12 @@ TICLOUD_PASSWORD = "<insert>"
 - A: A text file can effectively represent any type of data, including software. The conversion to a PDF format, effectively enforces rules on how that data is structured and accessed by the parser. The step does not remove content from the visual layer, which might represent malicious code. The final step of performing CDR on the PDF file, ensures that any active content that might have made it through the conversion process is removed, with hyperlinks also being deactivated. Again the malicious code that by be printed to the visual layer, from the original TXT file may still be visible to read but it's no longer active, or accessible for execution, simply by changing the file extension.
 
 - Q: Why does this script convert a CSV file into an EXCEL file, and only place the final .xlsx that has been CDR'd into the destination path?
-- A: In a similar way to TXT files, malicious data can exist in the file. Whilst the data is structured in terms of comma-separated values, the values can be problematic. The RFC (https://www.ietf.org/rfc/rfc4180.txt) states, 
+- A: In a similar way to TXT files, malicious data can exist in the file. Whilst the data is structured in terms of comma-separated values, the values can be problematic. The RFC (`https://www.ietf.org/rfc/rfc4180.txt`) states,
 
-"Security considerations:
+Security considerations:
 
-      CSV files contain passive text data that should not pose any
-      risks. However, it is possible in theory that malicious binary
-      data may be included in order to exploit potential buffer overruns
-      in the program processing CSV data. Additionally, private data
-      may be shared via this format (which of course applies to any text
-      data)."
-"    
-CSV-injection attacks have been demonstrated in the past, and therefore the CSV can pose a risk. This script converts the CSV to an EXCEL format, and the completes the CDR process to apply the industry specification for EXCEL. 
+```text
+CSV files contain passive text data that should not pose any risks. However, it is possible in theory that malicious binary data may be included in order to exploit potential buffer overruns in the program processing CSV data. Additionally, private data may be shared via this format (which of course applies to any text data)."
+```
 
+CSV-injection attacks have been demonstrated in the past, and therefore the CSV can pose a risk. This script converts the CSV to an EXCEL format, and the completes the CDR process to apply the industry specification for EXCEL.
