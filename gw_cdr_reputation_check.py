@@ -7,6 +7,7 @@ import shutil
 import os
 import time
 import pathlib
+import logging
 from fpdf import FPDF
 from dotenv import load_dotenv
 from ReversingLabs.SDK.ticloud import FileReputation
@@ -20,7 +21,6 @@ load_dotenv()
 
 GW_CDR_PLATFORM_URL = "https://api.glasswall.com"
 # Note the the 'GW_CDR_PLATFORM_URL' address is for demonstration purposes only
-REPUTATION_OUTCOME = None
 TICLOUD_HOST_URL = "https://ticloud01.reversinglabs.com"
 INPUT_FILE_PATH = r"input"
 OUTPUT_FILE_PATH = r"output"
@@ -36,16 +36,17 @@ WAIT_429_ERROR = 0  # wait period (s)if 429 error received #Ensure rate limiting
 API_WAIT_PERIOD = 1  # Set API wait period(s) to avoid hitting rate throttling
 CREATE_CDR_ANALYSIS_REPORTS = True
 CREATE_CDR_FILES = True
-CREATE_REPUTATION_REPORTS = False
+CREATE_REPUTATION_REPORTS = True
 CONVERT_TXT2PDF_AND_CDR = True
 CONVERT_CSV2EXCEL_AND_CDR = True
 REMOVE_TEMP_PDF_FOLDER = True
 REMOVE_TEMP_EXCEL_FOLDER = True
 CDR_REPORT_FORMAT = 'JSON'  # JSON or XML
-
+LOGGING_LEVEL = logging.INFO
 
 def cdr_platform_request(url, file):
     '''Send files to local or remote Glasswall CDR Platform'''
+    logging.info('Managing connection to CDR Platform')
     try:
         response = requests.post(
             url=url,
@@ -60,23 +61,23 @@ def cdr_platform_request(url, file):
             }
         )
         if response.status_code == 200:
-            print(response)
-            print("Connected to CDR Platform")
+            # logging.info(response)
+            logging.info("Connected to CDR Platform")
             response.raise_for_status()
             time.sleep(API_WAIT_PERIOD)
-            print("API throttle - waiting", API_WAIT_PERIOD, "second(s)")
+            logging.info(print("API throttle - waiting", API_WAIT_PERIOD, "second(s)"))
         elif response.status_code == 429:
-            print("Need to throttle back - hitting 429 errors from CDR Platform")
+            logging.error("Need to throttle back - hitting 429 errors from CDR Platform")
             time.sleep(WAIT_429_ERROR)
         else:
-            print(response)
-            print("CDR Platform not able to process request")
+            logging.error(response)
+            logging.error("CDR Platform not able to process request")
     except requests.ConnectionError as error:
-        print(error)
+        logging.error(error)
     except requests.exceptions.Timeout as errt:
-        print(errt)
+        logging.error(errt)
     except requests.exceptions.RequestException as err:
-        print(err)
+        logging.error(err)
     return response
 
 def write_ticloud_reputation_report_to_file(f, report):
@@ -88,11 +89,13 @@ def write_ticloud_reputation_report_to_file(f, report):
         # f.write('\r'+'Threat Name: '+report_json['rl']['malware_presence']['threat_name'])
 
         REPUTATION_OUTCOME="BAD"
-        print(REPUTATION_OUTCOME+" - Reputation service reports that the file is Malicious")
+        logging.debug(print(REPUTATION_OUTCOME+ \
+            " - Reputation service reports that the file is Malicious"))
     else:
         # f.write('\r'+'Threat Name: No detected threat')
         REPUTATION_OUTCOME="GOOD"
-        print(REPUTATION_OUTCOME+" - Reputation service reports no threats")
+        logging.debug(print('Managing reputation lookup', REPUTATION_OUTCOME+ \
+            " - Reputation service reports no threats"))
     f.write('\r'+'\r'+report.text)
 
 # Check the reputation of files which can't be CDR'd
@@ -142,12 +145,12 @@ def txt_to_pdf():
                 os.makedirs(os.path.dirname(txt2pdf_copy_filepath+os.sep), exist_ok=True)
                 file_extension = pathlib.Path(filename).suffix
                 if file_extension == '.txt':
-                    print("Creating PDFs instead of TXT files\n")
-                    print(filename)
+                    logging.info("Creating PDFs instead of TXT files\n")
+                    logging.debug(filename)
                     filepath = root + os.sep + filename
                     pdf_output_file_name = filename + "~.pdf"
                     create_pdf(filepath, pdf_output_file_name, txt2pdf_copy_filepath)
-                    print("+----------+")
+                    logging.debug("+----------+")
 
 def txt_to_pdf_with_cdr():
     '''Write PDF files which were converted from TXT and CDR them. \
@@ -155,7 +158,7 @@ def txt_to_pdf_with_cdr():
     for root, _ , files in os.walk(TXT2PDF_OUTPUT_FILE_PATH, topdown=True, followlinks=False):
         for filename in files:
             filepath = root + os.sep + filename
-            print(filename)
+            logging.debug(filename)
             if CONVERT_TXT2PDF_AND_CDR is True:
                 dynamic_source_file = TXT2PDF_OUTPUT_FILE_PATH
                 dynamic_target_file = CLEAN_CDR_OUTPUT_FILE_PATH
@@ -166,8 +169,8 @@ def txt_to_pdf_with_cdr():
 
 def create_excel(filepath, csv2excel_copy_filepath, csv_excel_output_file_name):
     '''Create PDF from unsupported TXT file'''
-    print(filepath)
-    print(csv2excel_copy_filepath+os.sep+csv_excel_output_file_name)
+    logging.debug(filepath)
+    logging.debug(csv2excel_copy_filepath+os.sep+csv_excel_output_file_name)
     read_file = pd.read_csv (filepath)
     read_file.to_excel (csv2excel_copy_filepath+os.sep+csv_excel_output_file_name, \
         index = None, header=True)
@@ -175,7 +178,7 @@ def create_excel(filepath, csv2excel_copy_filepath, csv_excel_output_file_name):
 def csv_to_excel():
     '''Convert CSV file to Excel format'''
     if CONVERT_CSV2EXCEL_AND_CDR is True:
-        print("csv2excel")
+        logging.info("csv2excel")
         for root, _ , files in os.walk(INPUT_FILE_PATH, topdown=True, followlinks=False):
             for filename in files:
                 filepath = root + os.sep + filename
@@ -187,12 +190,12 @@ def csv_to_excel():
                 os.makedirs(os.path.dirname(csv2excel_copy_filepath+os.sep), exist_ok=True)
                 file_extension = pathlib.Path(filename).suffix
                 if file_extension == '.csv':
-                    print("Creating Excel files instead of CSV files\n")
-                    print(filename)
+                    logging.info("Creating Excel files instead of CSV files\n")
+                    logging.debug(filename)
                     filepath = root + os.sep + filename
                     csv_excel_output_file_name = filename + "~.xlsx"
                     create_excel(filepath, csv2excel_copy_filepath, csv_excel_output_file_name)
-                    print("+----------+")
+                    logging.debug("+----------+")
 
 def csv_to_excel_with_cdr():
     '''Write PDF files which were converted from TXT and CDR them. \
@@ -200,7 +203,7 @@ def csv_to_excel_with_cdr():
     for root, _ , files in os.walk(CSV2EXCEL_OUTPUT_FILE_PATH, topdown=True, followlinks=False):
         for filename in files:
             filepath = root + os.sep + filename
-            print(filename)
+            logging.debug(filename)
             if CONVERT_CSV2EXCEL_AND_CDR is True:
                 dynamic_source_file = CSV2EXCEL_OUTPUT_FILE_PATH
                 dynamic_target_file = CLEAN_CDR_OUTPUT_FILE_PATH
@@ -211,7 +214,7 @@ def csv_to_excel_with_cdr():
 def cdr_file_check_analyse():
     '''Perform CDR File Check and Analysis If Possible'''
     for root, _ , files in os.walk(INPUT_FILE_PATH, topdown=True, followlinks=False):
-        print(INPUT_FILE_PATH)
+        logging.debug(INPUT_FILE_PATH)
         for filename in files:
             filepath = root + os.sep + filename
             # create filepath for files which are determined to have a \
@@ -219,36 +222,36 @@ def cdr_file_check_analyse():
             copy_filepath = root.replace(INPUT_FILE_PATH, \
                 (OUTPUT_FILE_PATH+os.sep+COPIED_GOOD_REPUTATION_FILE_PATH), 1) +os.sep + filename
             with open(filepath, "rb") as file_binary:
-                print("Checking file type with Glassall")
+                logging.info("Checking file type with Glassall")
                 filetype_detection_responce = cdr_platform_request\
                     (GW_CDR_PLATFORM_URL+"/api/filetypedetection/file", file_binary)
                 file_bytes = file_binary.read()
                 file_sha256_hash = hashlib.sha256(file_bytes).hexdigest()
                 # print(file_sha256_hash)
-                print(filename)
+                logging.debug(filename)
             filetype_detection_responce_json = json.loads(filetype_detection_responce.content)
             file_supported_outcome=(filetype_detection_responce_json.get("rebuildProcessingStatus"))
 
             if file_supported_outcome=="FILE_WAS_UN_PROCESSABLE" \
                 or file_supported_outcome=="FILE_TYPE_UNSUPPORTED":
                 filecheck=False
-                print("Value:", file_supported_outcome)
-                print("Could proceed with CDR Analysis?:", filecheck)
-                print("+----------+")
+                logging.debug(print("Value:", file_supported_outcome))
+                logging.debug(print("Could proceed with CDR Analysis?:", filecheck))
+                logging.debug("+----------+")
             else:
                 filecheck=True
-                print("Value:", file_supported_outcome)
-                print("Could proceed with CDR Analysis?:", filecheck)
+                logging.debug(print("Value:", file_supported_outcome))
+                logging.debug(print("Could proceed with CDR Analysis?:", filecheck))
                 if CREATE_CDR_ANALYSIS_REPORTS is True:
-                    print("Performing CDR Analysis")
+                    logging.info("Performing CDR Analysis")
                 else:
-                    print("CDR Analysis not enabled")
+                    logging.info("CDR Analysis not enabled")
 
                 # Perform CDR Analysis If Possible
                 if CREATE_CDR_ANALYSIS_REPORTS is True and filecheck is True: \
                     # Won't perform CDR Analysis if check failed. Note sometimes this is possible.
                     with open(filepath, "rb") as file_binary:
-                        print("Creating CDR Analysis Report")
+                        logging.info("Creating CDR Analysis Report")
 
                         if CDR_REPORT_FORMAT == 'JSON':
                             cdr_report_ext='.json'
@@ -259,7 +262,7 @@ def cdr_file_check_analyse():
                             +os.sep + filename +"~"+(file_sha256_hash)+cdr_report_ext
                         cdr_platform_analyse_response = cdr_platform_request\
                             (GW_CDR_PLATFORM_URL+"/api/analyse/file", file_binary)
-                        print("Requesting analysis report from Glassall CDR Platform")
+                        logging.info("Requesting analysis report from Glassall CDR Platform")
 
                         if cdr_platform_analyse_response.status_code == 200 \
                             and cdr_platform_analyse_response.content:
@@ -269,9 +272,10 @@ def cdr_file_check_analyse():
                             # Write the analysis file to the clean output file path
                             with open(new_cdr_analysis_filepath, "wb") as file_binary:
                                 file_binary.write(cdr_platform_analyse_response.content)
-                            print("GOOD - CDR Analysis Successful - wrote clean file to:", \
-                                os.path.abspath(new_cdr_analysis_filepath))
-                        print(filename, INPUT_FILE_PATH, CLEAN_CDR_ANALYSIS_FILE_PATH)
+                            logging.debug(print("GOOD - CDR Analysis Successful - wrote clean \
+                            file to:", os.path.abspath(new_cdr_analysis_filepath)))
+                        logging.debug(print(filename, INPUT_FILE_PATH, \
+                            CLEAN_CDR_ANALYSIS_FILE_PATH))
 
                         if CREATE_CDR_FILES is True:
                             # Moving to CDR Rebuild step
@@ -291,12 +295,12 @@ def cdr_rebuild_files(filename, root, filepath, dynamic_source_file, dynamic_tar
     # This calculation is off
     new_cdr_filepath = root.replace(dynamic_source_file, \
         (OUTPUT_FILE_PATH+os.sep+dynamic_target_file), 1) +os.sep + filename
-    print(new_cdr_filepath)
+    logging.info(new_cdr_filepath)
     with open(filepath, "rb") as file_binary:
-        print("Creating Rebuilt File")
+        logging.info("Creating Rebuilt File")
         cdr_platform_rebuild_response = cdr_platform_request\
             (GW_CDR_PLATFORM_URL+"/api/rebuild/file", file_binary)
-        print("Requesting rebuild from Glassall CDR Platform")
+        logging.info("Requesting rebuild from Glassall CDR Platform")
 
         if cdr_platform_rebuild_response.status_code == 200 \
             and cdr_platform_rebuild_response.content:
@@ -306,18 +310,20 @@ def cdr_rebuild_files(filename, root, filepath, dynamic_source_file, dynamic_tar
             # Write the rebuilt file to the clean output file path
             with open(new_cdr_filepath, "wb") as file_binary:
                 file_binary.write(cdr_platform_rebuild_response.content)
-            print("GOOD - CDR Successful - wrote clean file to:", os.path.abspath(new_cdr_filepath))
-            print("+--------------------+")
+            logging.debug(print("GOOD - CDR Successful - wrote clean file to:", \
+                os.path.abspath(new_cdr_filepath)))
+            logging.debug("+--------------------+")
 
         else:
             # An error occurred, print the rebuild processing status
             cdr_platform_response_json = json.loads(cdr_platform_rebuild_response.content)
-            print((cdr_platform_response_json.get("rebuildProcessingStatus")))
+            logging.debug(print((cdr_platform_response_json.get("rebuildProcessingStatus"))))
 
 def get_reputation_of_files (filecheck, filename, filepath, copy_filepath):
     '''Iterate through files which cannot be CDR'd and obtain reputation result'''
     if CREATE_REPUTATION_REPORTS is True and filecheck is False:
-        print("CDR not possible for "+filename+" - Checking the file's malware reputation")
+        logging.debug(print("CDR not possible for "+filename+\
+            " - Checking the file's malware reputation"))
         with open(filepath,"rb") as file_binary:
             file_bytes = file_binary.read()
         file_sha256_hash = hashlib.sha256(file_bytes).hexdigest()
@@ -341,11 +347,11 @@ def get_reputation_of_files (filecheck, filename, filepath, copy_filepath):
                 +REPUTATION_REPORT_PATH+os.sep+file_sha256_hash), \
                 os.path.abspath(OUTPUT_FILE_PATH+os.sep+REPUTATION_REPORT_PATH+os.sep\
                     +GOOD_REPUTATION_FOLDER+os.sep+file_sha256_hash+" "+"~"+filename+"~"+".json"))
-            print("Copying original "+filepath+" with good reputation to "\
-                +copy_filepath)
+            logging.debug(print("Copying original "+filepath+" with good reputation to "\
+                +copy_filepath))
             os.makedirs(os.path.dirname(copy_filepath), exist_ok=True)
             shutil.copyfile(os.path.abspath(filepath),os.path.abspath(copy_filepath))
-            print("+--------------------+")
+            logging.debug("+--------------------+")
 
         else:
             # Create the bad reputation directories if it does not already exist
@@ -355,29 +361,31 @@ def get_reputation_of_files (filecheck, filename, filepath, copy_filepath):
                 +os.sep+file_sha256_hash), \
                 os.path.abspath(OUTPUT_FILE_PATH+os.sep+REPUTATION_REPORT_PATH+os.sep\
                     +BAD_REPUTATION_FOLDER+os.sep+file_sha256_hash+" "+"~"+filename+"~"+".json"))
-            print("Keeping original "+filepath+" with bad reputation - no copy")
-            print("+--------------------+")
+            logging.debug(print("Keeping original "+filepath+" with bad reputation - no copy"))
+            logging.debug("+--------------------+")
 
 def main():
     '''Execute program'''
-    print("\nStarting to process files \n")
+    logging.basicConfig(filename='gw_cdr_logging.log', filemode='w', level=LOGGING_LEVEL, \
+        format='%(asctime)s %(message)s')
+    logging.info(print('Starting Program'))
     # Iterate through the input file path locating all files
 
     if CONVERT_TXT2PDF_AND_CDR is True:
-        print("Converting TXT files to PDF")
+        logging.info("Converting TXT files to PDF")
         txt_to_pdf()
         txt_to_pdf_with_cdr()
     else:
-        print("No TXT to PDF step\n")
+        logging.info("No TXT to PDF step\n")
     if CONVERT_CSV2EXCEL_AND_CDR is True:
-        print("Converting CSV files to EXCEL")
+        logging.info("Converting CSV files to EXCEL")
         csv_to_excel()
         csv_to_excel_with_cdr()
     else:
-        print("No CSV to EXCEL step\n")
-
+        logging.info("No CSV to EXCEL step\n")
 
     cdr_file_check_analyse()
+    logging.info(print('Finished Program'))
 
 if __name__ == "__main__":
     main()
