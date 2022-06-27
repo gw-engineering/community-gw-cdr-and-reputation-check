@@ -1,5 +1,5 @@
-'''Community script to support reputation lookup of files, and to convert TEXT and CSV files to
-a supported file format.
+'''Community script to support reputation lookup of files, and to
+convert TEXT and CSV files to a supported file format.
 '''
 import json
 import hashlib
@@ -44,6 +44,7 @@ REMOVE_TEMP_EXCEL_FOLDER = True
 CDR_REPORT_FORMAT = 'JSON'  # JSON or XML
 LOGGING_LEVEL = logging.INFO
 
+
 def cdr_platform_request(url, file):
     '''Send files to local or remote Glasswall CDR Platform'''
     logging.info('Managing connection to CDR Platform')
@@ -80,6 +81,7 @@ def cdr_platform_request(url, file):
         logging.error(err)
     return response
 
+
 def write_ticloud_reputation_report_to_file(f, report):
     '''Write the reputation of files which can't be CDR'd'''
     global REPUTATION_OUTCOME
@@ -88,54 +90,58 @@ def write_ticloud_reputation_report_to_file(f, report):
     if report_json['rl']['malware_presence']['status'] == 'MALICIOUS':
         # f.write('\r'+'Threat Name: '+report_json['rl']['malware_presence']['threat_name'])
 
-        REPUTATION_OUTCOME="BAD"
-        logging.debug(print(REPUTATION_OUTCOME+ \
+        REPUTATION_OUTCOME = "BAD"
+        logging.debug(print(REPUTATION_OUTCOME + \
             " - Reputation service reports that the file is Malicious"))
     else:
         # f.write('\r'+'Threat Name: No detected threat')
-        REPUTATION_OUTCOME="GOOD"
-        logging.debug(print('Managing reputation lookup', REPUTATION_OUTCOME+ \
+        REPUTATION_OUTCOME = "GOOD"
+        logging.debug(print('Managing reputation lookup', REPUTATION_OUTCOME + \
             " - Reputation service reports no threats"))
     f.write('\r'+'\r'+report.text)
 
+
 # Check the reputation of files which can't be CDR'd
 ticloud_file_reputation = FileReputation(
-    host = TICLOUD_HOST_URL,
+    host=TICLOUD_HOST_URL,
     # These values should be in a .env file
-    username = os.environ.get('TICLOUD_USERNAME'),
-    password = os.environ.get('TICLOUD_PASSWORD')
+    username=os.environ.get('TICLOUD_USERNAME'),
+    password=os.environ.get('TICLOUD_PASSWORD')
 )
+
 
 def remove_temp_txt_to_pdf_folder():
     '''Will remove the temporary pdf folder which has not been CDR'd'''
     if REMOVE_TEMP_PDF_FOLDER is True:
-        removepath=TXT2PDF_OUTPUT_FILE_PATH
+        removepath = TXT2PDF_OUTPUT_FILE_PATH
         if os.path.exists(removepath) and os.path.isdir(removepath):
             shutil.rmtree(removepath)
+
 
 # Will remove the temporary excel folder which has not been CDR'd
 def remove_temp_csv_to_excel_folder():
     '''Will remove the temporary excel folder which has not been CDR'd'''
     if REMOVE_TEMP_EXCEL_FOLDER is True:
-        removepath=CSV2EXCEL_OUTPUT_FILE_PATH
+        removepath = CSV2EXCEL_OUTPUT_FILE_PATH
         if os.path.exists(removepath) and os.path.isdir(removepath):
             shutil.rmtree(removepath)
+
 
 def create_pdf(filepath, pdf_output_file_name, txt2pdf_copy_filepath):
     '''Create PDF from unsupported TXT file'''
     pdf = FPDF()
     pdf.add_page()
-    pdf.set_font("Arial", size = 12)
+    pdf.set_font("Arial", size=12)
     with open(filepath, "r", encoding="utf8") as f:
         for x in f:
-            pdf.cell(200, 10, txt = x, ln = 1, align = 'L')
+            pdf.cell(200, 10, txt=x, ln=1, align='L')
     pdf.output(txt2pdf_copy_filepath+os.sep+pdf_output_file_name)
 
 
 def txt_to_pdf():
     '''Write txt files which can't be CDR'd to a PDF in temporary location'''
     if CONVERT_TXT2PDF_AND_CDR is True:
-        for root, _ , files in os.walk(INPUT_FILE_PATH, topdown=True, followlinks=False):
+        for root, _, files in os.walk(INPUT_FILE_PATH, topdown=True, followlinks=False):
             for filename in files:
                 filepath = root + os.sep + filename
                 # Path which files with a good reputation and the .TXT \
@@ -152,10 +158,11 @@ def txt_to_pdf():
                     create_pdf(filepath, pdf_output_file_name, txt2pdf_copy_filepath)
                     logging.debug("+----------+")
 
+
 def txt_to_pdf_with_cdr():
     '''Write PDF files which were converted from TXT and CDR them. \
         Place in desired clean destination tree'''
-    for root, _ , files in os.walk(TXT2PDF_OUTPUT_FILE_PATH, topdown=True, followlinks=False):
+    for root, _, files in os.walk(TXT2PDF_OUTPUT_FILE_PATH, topdown=True, followlinks=False):
         for filename in files:
             filepath = root + os.sep + filename
             logging.debug(filename)
@@ -167,19 +174,21 @@ def txt_to_pdf_with_cdr():
     # Clean-up temp folder
     remove_temp_txt_to_pdf_folder()
 
+
 def create_excel(filepath, csv2excel_copy_filepath, csv_excel_output_file_name):
     '''Create PDF from unsupported TXT file'''
     logging.debug(filepath)
     logging.debug(csv2excel_copy_filepath+os.sep+csv_excel_output_file_name)
-    read_file = pd.read_csv (filepath)
-    read_file.to_excel (csv2excel_copy_filepath+os.sep+csv_excel_output_file_name, \
-        index = None, header=True)
+    read_file = pd.read_csv(filepath)
+    read_file.to_excel(csv2excel_copy_filepath+os.sep+csv_excel_output_file_name, \
+        index=None, header=True)
+
 
 def csv_to_excel():
     '''Convert CSV file to Excel format'''
     if CONVERT_CSV2EXCEL_AND_CDR is True:
         logging.info("csv2excel")
-        for root, _ , files in os.walk(INPUT_FILE_PATH, topdown=True, followlinks=False):
+        for root, _, files in os.walk(INPUT_FILE_PATH, topdown=True, followlinks=False):
             for filename in files:
                 filepath = root + os.sep + filename
                 # Path which files with a good reputation and the \
@@ -197,10 +206,11 @@ def csv_to_excel():
                     create_excel(filepath, csv2excel_copy_filepath, csv_excel_output_file_name)
                     logging.debug("+----------+")
 
+
 def csv_to_excel_with_cdr():
     '''Write PDF files which were converted from TXT and CDR them. \
         Place in desired clean destination tree'''
-    for root, _ , files in os.walk(CSV2EXCEL_OUTPUT_FILE_PATH, topdown=True, followlinks=False):
+    for root, _, files in os.walk(CSV2EXCEL_OUTPUT_FILE_PATH, topdown=True, followlinks=False):
         for filename in files:
             filepath = root + os.sep + filename
             logging.debug(filename)
@@ -213,14 +223,14 @@ def csv_to_excel_with_cdr():
 
 def cdr_file_check_analyse():
     '''Perform CDR File Check and Analysis If Possible'''
-    for root, _ , files in os.walk(INPUT_FILE_PATH, topdown=True, followlinks=False):
+    for root, _, files in os.walk(INPUT_FILE_PATH, topdown=True, followlinks=False):
         logging.debug(INPUT_FILE_PATH)
         for filename in files:
             filepath = root + os.sep + filename
             # create filepath for files which are determined to have a \
             # good reputation, but can't be CDR'd
-            copy_filepath = root.replace(INPUT_FILE_PATH, \
-                (OUTPUT_FILE_PATH+os.sep+COPIED_GOOD_REPUTATION_FILE_PATH), 1) +os.sep + filename
+            copy_filepath = root.replace(INPUT_FILE_PATH,\
+                (OUTPUT_FILE_PATH+os.sep+COPIED_GOOD_REPUTATION_FILE_PATH), 1) + os.sep + filename
             with open(filepath, "rb") as file_binary:
                 logging.info("Checking file type with Glassall")
                 filetype_detection_responce = cdr_platform_request\
@@ -230,10 +240,11 @@ def cdr_file_check_analyse():
                 # print(file_sha256_hash)
                 logging.debug(filename)
             filetype_detection_responce_json = json.loads(filetype_detection_responce.content)
-            file_supported_outcome=(filetype_detection_responce_json.get("rebuildProcessingStatus"))
+            file_supported_outcome = \
+                (filetype_detection_responce_json.get("rebuildProcessingStatus"))
 
-            if file_supported_outcome=="FILE_WAS_UN_PROCESSABLE" \
-                or file_supported_outcome=="FILE_TYPE_UNSUPPORTED":
+            if file_supported_outcome == "FILE_WAS_UN_PROCESSABLE" \
+                or file_supported_outcome == "FILE_TYPE_UNSUPPORTED":
                 filecheck=False
                 logging.debug(print("Value:", file_supported_outcome))
                 logging.debug(print("Could proceed with CDR Analysis?:", filecheck))
@@ -258,8 +269,8 @@ def cdr_file_check_analyse():
                         else:
                             cdr_report_ext='.xml'
                         new_cdr_analysis_filepath = root.replace(INPUT_FILE_PATH, \
-                            (OUTPUT_FILE_PATH+os.sep+CLEAN_CDR_ANALYSIS_FILE_PATH), 1) \
-                            +os.sep + filename +"~"+(file_sha256_hash)+cdr_report_ext
+                            (OUTPUT_FILE_PATH+os.sep + CLEAN_CDR_ANALYSIS_FILE_PATH), 1) \
+                            + os.sep + filename + "~" + (file_sha256_hash) + cdr_report_ext
                         cdr_platform_analyse_response = cdr_platform_request\
                             (GW_CDR_PLATFORM_URL+"/api/analyse/file", file_binary)
                         logging.info("Requesting analysis report from Glassall CDR Platform")
